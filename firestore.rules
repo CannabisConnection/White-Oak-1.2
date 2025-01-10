@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Businesses collection
+    match /businesses/{businessId} {
+      allow read: if isAuthenticated() && isOwner(businessId);
+      allow create: if isAuthenticated() && isOwner(businessId);
+      allow update: if isAuthenticated() && isOwner(businessId);
+      allow delete: if false; // Prevent deletion
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && resource != null && isOwner(resource.data.businessId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.businessId);
+      allow update: if isAuthenticated() && isOwner(resource.data.businessId);
+      allow delete: if false; // Prevent deletion
+    }
+  }
+}
